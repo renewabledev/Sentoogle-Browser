@@ -1,0 +1,23 @@
+{
+  "name": "ai-browser",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@ai-sdk/fireworks": "^0.2.13",
+    "ai": "^3.0.0",
+    "playwright": "^1.40.0",
+    "electron-store": "^10.1.0",
+    "electron-fetch": "^1.9.1" 
+  },
+  "devDependencies": {
+    "electron": "^39.1.0"
+  },
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

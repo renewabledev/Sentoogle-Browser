@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentoogle</title>
+  <style>
+    body { 
+      margin: 0; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: linear-gradient(90deg, #2c2c2c, #111); 
+      height: 100vh; 
+      overflow: hidden; 
+      display: flex; 
+      flex-direction: column; 
+      position: relative; 
+    }
+    #tabs { 
+      display: flex; 
+      align-items: center; 
+      background: linear-gradient(90deg, #2c2c2c, #111); 
+      padding: 0 10px; 
+      height: 50px; 
+      overflow-x: auto; 
+      z-index: 10000; 
+      position: fixed; 
+      top: 0; 
+      width: 100%; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+      border-radius: 0 0 12px 12px; 
+    }
+    .tab { 
+      padding: 8px 12px; 
+      background: linear-gradient(135deg, #f0f0f0, #d0d0d0); 
+      margin-right: 5px; 
+      cursor: pointer; 
+      min-width: 140px; 
+      max-width: 220px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      border-radius: 9px; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
+      transition: all 0.3s ease; 
+      position: relative; 
+      overflow: hidden; 
+      z-index: 10001; 
+    }
+    .tab:hover { 
+      background: linear-gradient(135deg, #f3e5f5, #ce93d8); 
+      transform: translateY(-2px); 
+    }
+    .tab.active { 
+      background: linear-gradient(135deg, #fff, #f5f5f5); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+      filter: brightness(105%); 
+    }
+    .tab.mini { 
+      min-width: 60px; 
+      max-width: 70px; 
+      padding: 8px 8px; 
+      flex-direction: column; 
+      justify-content: center; 
+    }
+    .tab.mini .tab-title { 
+      display: none; 
+    }
+    .tab .favicon { 
+      width: 20px; 
+      height: 20px; 
+      margin-right: 8px; 
+      flex-shrink: 0; 
+      display: inline-block; 
+      border-radius: 4px; 
+      max-width: 20px; 
+      max-height: 20px; 
+    }
+    .tab-close { 
+      margin-left: auto; 
+      cursor: pointer; 
+      color: #d32f2f; 
+      transition: color 0.3s, transform 0.2s; 
+      font-size: 16px; 
+      padding: 2px; 
+    }
+    .tab-close:hover { 
+      color: #b71c1c; 
+      transform: scale(1.2); 
+    }
+    #add-tab { 
+      cursor: pointer; 
+      color: white; 
+      background: transparent; 
+      border: none; 
+      padding: 8px; 
+      z-index: 10001; 
+      font-size: 24px; 
+      font-weight: bold; 
+      margin-right: 5px; 
+    } 
+    #settings-btn { 
+      cursor: pointer; 
+      color: white; 
+      background: transparent; 
+      border: none; 
+      padding: 8px; 
+      z-index: 10001; 
+      font-size: 18px; 
+    }
+    #address-bar { 
+      display: none; 
+      align-items: center; 
+      background: #fff; 
+      padding: 2px 10px; 
+      border-bottom: 1px solid #ddd; 
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05); 
+      position: fixed; 
+      top: 50px; 
+      width: 100%; 
+      height: 32px; 
+      z-index: 100000; 
+      justify-content: space-between; 
+      overflow: hidden; 
+      box-sizing: border-box; 
+    }
+    #url-display { 
+      flex: 1; 
+      padding: 4px 12px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+      outline: none; 
+      background: #f9f9f9; 
+      font-size: 14px; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      white-space: nowrap; 
+      position: relative; 
+      box-sizing: border-box; 
+    }
+    #url-display:before { 
+      content: '🔒'; 
+      position: absolute; 
+      left: 5px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      color: #388e3c; 
+      font-size: 14px; 
+    }
+    #nav-buttons { 
+      display: flex; 
+      flex-shrink: 0; 
+    }
+    #reload-btn, #back-btn, #forward-btn { 
+      padding: 4px 6px; 
+      background: transparent; 
+      color: #000; 
+      border: none; 
+      border-radius: 0; 
+      cursor: pointer; 
+      transition: color 0.2s; 
+      font-size: 14px; 
+      box-shadow: none; 
+      margin-right: 0; 
+      flex-shrink: 0; 
+    }
+    #reload-btn:hover, #back-btn:hover, #forward-btn:hover { 
+      background: transparent; 
+      color: #666; 
+    }
+    #reload-btn:before { 
+      content: '\21BB'; 
+    }
+    #back-btn:before { 
+      content: '\2190'; 
+    }
+    #forward-btn:before { 
+      content: '\2192'; 
+    }
+    #content { 
+      position: fixed; 
+      top: 82px; 
+      width: 100%; 
+      height: calc(100vh - 82px); 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      flex-direction: column; 
+      gap: 20px; 
+      background: linear-gradient(90deg, #2c2c2c, #111); 
+      overflow: hidden; 
+      z-index: 1; 
+      box-sizing: border-box; 
+    }
+    .home-content { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 10px; 
+    }
+    .new-tab-content { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 10px; 
+    }
+    .input-container { 
+      position: relative; 
+      display: flex; 
+      align-items: center; 
+    }
+    #command-input { 
+      width: 500px; 
+      min-width: 350px; 
+      padding: 15px 55px 15px 20px; 
+      box-sizing: border-box; 
+      border: 3px solid #666; 
+      border-radius: 30px; 
+      font-size: 18px; 
+      outline: none; 
+      background: #fff; 
+      color: #333; 
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); 
+      transition: none; 
+    }
+    #command-input:hover, #command-input:focus { 
+      border-color: #444; 
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.15); 
+    }
+    #search-btn { 
+      position: absolute; 
+      right: 10px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      color: #000; 
+      font-size: 18px; 
+      background: none; 
+      border: none; 
+      padding: 5px; 
+    }
+    #search-btn:before { 
+      content: '\1F50D'; 
+    }
+    .title { 
+      font-size: 42px; 
+      color: transparent; 
+      margin: 0 0 10px 0; 
+      text-align: center; 
+      font-weight: bold; 
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1); 
+      background: linear-gradient(45deg, #444, #111, #888, #CE0094, #003ACE, #49A16C, #6e4aff); 
+      background-size: 200% 200%; 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      background-size: 300% 300%; 
+      -webkit-text-fill-color: transparent; 
+      animation: gradient-shift 3s ease-in-out infinite; 
+      -webkit-animation: gradient-shift 3s ease-in-out infinite; 
+    }
+    @keyframes gradient-shift { 
+      0% { background-position: 0% 50%; } 
+      50% { background-position: 100% 50%; } 
+      100% { background-position: 0% 50%; } 
+    }
+    @-webkit-keyframes gradient-shift { 
+      0% { background-position: 0% 50%; } 
+      50% { background-position: 100% 50%; } 
+      100% { background-position: 0% 50%; } 
+    }
+    #ai-float { 
+      position: fixed; 
+      bottom: 20px; 
+      right: 20px; 
+      width: 60px; 
+      height: 60px; 
+      background: white; 
+      border-radius: 50%; 
+      cursor: pointer; 
+      display: none; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 24px; 
+      color: black; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+      z-index: 999999; 
+      transition: transform 0.2s; 
+    }
+    #ai-float:hover { 
+      transform: scale(1.1); 
+    }
+    #ai-dialog { 
+      position: fixed; 
+      bottom: 100px; 
+      right: 20px; 
+      width: 350px; 
+      max-height: 400px; 
+      background: #fff; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2); 
+      display: none; 
+      z-index: 1337228; 
+      overflow: hidden; 
+      flex-direction: column; 
+    }
+    #ai-dialog .header { 
+      background: #f5f5f5; 
+      padding: 10px 15px; 
+      border-bottom: 1px solid #ddd; 
+      font-weight: bold; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+    }
+    #ai-dialog .close { 
+      cursor: pointer; 
+      color: #666; 
+      font-size: 18px; 
+    }
+    #ai-dialog .chat { 
+      flex: 1; 
+      padding: 10px; 
+      overflow-y: auto; 
+      background: #fafafa; 
+      max-height: 300px; 
+    }
+    #ai-dialog .chat .message { 
+      margin-bottom: 10px; 
+      padding: 8px 12px; 
+      border-radius: 8px; 
+    }
+    #ai-dialog .chat .user { 
+      background: #e3f2fd; 
+      text-align: right; 
+    }
+    #ai-dialog .chat .ai { 
+      background: #f1f8e9; 
+      text-align: left; 
+    }
+    #ai-dialog .input { 
+      padding: 10px; 
+      border-top: 1px solid #ddd; 
+      background: #fff; 
+      display: flex; 
+    }
+    #ai-dialog .input input { 
+      flex: 1; 
+      padding: 8px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+      outline: none; 
+    }
+    #ai-dialog .input button { 
+      padding: 8px 12px; 
+      background: #2196f3; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      margin-left: 8px; 
+      cursor: pointer; 
+    }
+    #ai-dialog .input button:hover { 
+      background: #1976d2; 
+    }
+    .ai-chat-content { 
+      width: 100%; 
+      height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      padding: 20px; 
+      box-sizing: border-box; 
+    }
+    .ai-chat-content .output { 
+      flex: 1; 
+      padding: 10px 0; 
+      font-size: 16px; 
+    }
+    .ai-chat-content .input { 
+      display: flex; 
+      margin-top: auto; 
+    }
+    .ai-chat-content .input input { 
+      flex: 1; 
+      padding: 10px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+      outline: none; 
+    }
+    .ai-chat-content .input button { 
+      padding: 10px 15px; 
+      background: #2196f3; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      margin-left: 10px; 
+      cursor: pointer; 
+    }
+    .ai-chat-content .input button:hover { 
+      background: #1976d2; 
+    }
+    .settings-content { 
+      width: 100%; 
+      height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      padding: 50px; 
+      box-sizing: border-box; 
+      background: linear-gradient(90deg, #2c2c2c, #111); 
+      justify-content: center; 
+      align-items: center; 
+      gap: 30px; 
+    }
+    .setting-item { 
+      margin-bottom: 30px; 
+      color: white; 
+      font-size: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 10px; 
+    }
+    .setting-item label { 
+      font-weight: bold; 
+    }
+    .setting-item select { 
+      padding: 10px; 
+      border: 2px solid #555; 
+      border-radius: 8px; 
+      background: #1a1a1a; 
+      color: white; 
+      font-size: 18px; 
+      min-width: 200px; 
+    }
+    .setting-item select:hover { 
+      border-color: #777; 
+    }
+    .command-result { 
+      color: white; 
+      font-size: 16px; 
+      margin-top: 10px; 
+      max-height: 200px; 
+      overflow-y: auto; 
+    }
+  </style>
+</head>
+<body>
+  <div id="tabs">
+    <button id="settings-btn">⚙️</button>
+    <button id="add-tab">+</button>
+  </div>
+  <div id="address-bar">
+    <input type="text" id="url-display">
+    <div id="nav-buttons">
+      <button id="back-btn" onclick="goBack()" title="Back"></button>
+      <button id="forward-btn" onclick="goForward()" title="Forward"></button>
+      <button id="reload-btn" onclick="reloadTab()" title="Reload"></button>
+    </div>
+  </div>
+  <div id="content"></div>
+  <div id="ai-float" onclick="toggleAIDialog()">🤖</div>
+  <div id="ai-dialog">
+    <div class="header">
+      <span>AI Chat</span>
+      <span class="close" onclick="toggleAIDialog()">&times;</span>
+    </div>
+    <div class="chat" id="ai-chat"></div>
+    <div class="input">
+      <input id="ai-input" placeholder="Ask AI..." onkeydown="handleAIEnter(event)">
+      <button onclick="sendAIMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    window.electronAPI = {};
+
+    let tabs = [];
+    let activeTabId = null;
+    let isDialogOpenForContext = false;
+    let isInSettingsMode = false;
+    let aiSettings = { chat: 'dobby70b', summarize: 'dobby70b', explain: 'dobby70b', command: 'dobby70b' };
+
+    function createHomeHTML() {
+      return `
+        <div class="home-content">
+          <div class="title">Sentoogle</div>
+          <div class="input-container">
+            <input type="text" id="command-input" onkeydown="handleInputEnter(event, 'command-input')" placeholder="Search anything with AI" autocomplete="off">
+            <button id="search-btn" onclick="executeCommand()" title="Search"></button>
+          </div>
+          <div id="command-result" class="command-result"></div>
+        </div>
+      `;
+    }
+
+    function createNewTabHTML() {
+      return `
+        <div class="new-tab-content">
+          <div class="title">Sentoogle</div>
+          <div class="input-container">
+            <input type="text" id="command-input" onkeydown="handleInputEnter(event, 'command-input')" placeholder="Search anything with AI" autocomplete="off">
+            <button id="search-btn" onclick="executeCommand()" title="Search"></button>
+          </div>
+          <div id="command-result" class="command-result"></div>
+        </div>
+      `;
+    }
+
+    function createAIChatHTML(prompt = '') {
+      return `
+        <div class="ai-chat-content">
+          <div class="output" id="ai-output">AI Response will appear here...</div>
+          <div class="input">
+            <input type="text" id="ai-chat-input" value="${prompt}" placeholder="Ask AI..." onkeydown="handleAIChatEnter(event)">
+            <button onclick="sendAIChat()">Ask</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function createSettingsHTML(content) {
+      return `
+        <div class="settings-content" id="settings-content">
+          ${content}
+        </div>
+      `;
+    }
+
+    function buildSettingsContent() {
+      const commandModel = aiSettings.command || 'dobby70b';
+      const chatModel = aiSettings.chat || 'dobby70b';
+      const summModel = aiSettings.summarize || 'dobby70b';
+      const expModel = aiSettings.explain || 'dobby70b';
+      return `
+        <div class="setting-item">
+          <label for="command-select">Search AI:</label>
+          <select id="command-select" onchange="saveSetting('command', this.value)">
+            <option value="dobby70b" ${commandModel === 'dobby70b' ? 'selected' : ''}>Dobby 70B</option>
+            <option value="dobby8b" ${commandModel === 'dobby8b' ? 'selected' : ''}>Dobby 8B</option>
+            <option value="roma" ${commandModel === 'roma' ? 'selected' : ''}>ROMA (Xero AI)</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label for="chat-select">Chat Dialog AI:</label>
+          <select id="chat-select" onchange="saveSetting('chat', this.value)">
+            <option value="dobby70b" ${chatModel === 'dobby70b' ? 'selected' : ''}>Dobby 70B</option>
+            <option value="dobby8b" ${chatModel === 'dobby8b' ? 'selected' : ''}>Dobby 8B</option>
+            <option value="roma" ${chatModel === 'roma' ? 'selected' : ''}>ROMA (Xero AI)</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label for="summarize-select">Summarize AI:</label>
+          <select id="summarize-select" onchange="saveSetting('summarize', this.value)">
+            <option value="dobby70b" ${summModel === 'dobby70b' ? 'selected' : ''}>Dobby 70B</option>
+            <option value="dobby8b" ${summModel === 'dobby8b' ? 'selected' : ''}>Dobby 8B</option>
+            <option value="roma" ${summModel === 'roma' ? 'selected' : ''}>ROMA (Xero AI)</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label for="explain-select">Tell Me More AI:</label>
+          <select id="explain-select" onchange="saveSetting('explain', this.value)">
+            <option value="dobby70b" ${expModel === 'dobby70b' ? 'selected' : ''}>Dobby 70B</option>
+            <option value="dobby8b" ${expModel === 'dobby8b' ? 'selected' : ''}>Dobby 8B</option>
+            <option value="roma" ${expModel === 'roma' ? 'selected' : ''}>ROMA (Xero AI)</option>
+          </select>
+        </div>
+      `;
+    }
+
+    function createTab(id, title = 'Sentoogle', faviconUrl = '') {
+      const tabElement = document.createElement('div');
+      tabElement.className = 'tab';
+      tabElement.id = `tab-${id}`;
+      const displayTitle = typeof title === 'string' ? title.slice(0, 25) : 'Sentoogle';
+      const faviconSrc = (title === 'Home' || title === 'Sentoogle' || title === 'Settings' || title === 'New Tab') ? 'https://s2.coinmarketcap.com/static/img/coins/64x64/38868.png' : faviconUrl || '';
+      tabElement.innerHTML = `<img class="favicon" src="${faviconSrc}" alt="" onerror="this.src=''"><span class="tab-title">${displayTitle}</span><span class="tab-close">×</span>`;
+      tabElement.onclick = (e) => {
+        if (e.target.className === 'tab-close') closeTab(id);
+        else switchTab(id);
+      };
+      const tab = { id, title, isHome: title === 'Home', isNew: title === 'Sentoogle' || title === 'New Tab', isSettings: title === 'Settings', inputValue: '', isAIChat: false, aiPrompt: '', aiResponse: '', tabElement };
+      tabs.push(tab);
+      updateTabMiniStatus();
+      return tab;
+    }
+
+    function updateTabMiniStatus() {
+      const allTabs = document.querySelectorAll('.tab');
+      const shouldMini = allTabs.length >= 6;
+      allTabs.forEach(el => el.classList.toggle('mini', shouldMini));
+    }
+
+    function switchTab(id) {
+      if (isInSettingsMode) {
+        isInSettingsMode = false;
+      }
+      if (!tabs.find(t => t.id === id)) {
+        return;
+      }
+      activeTabId = id;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      const tabElement = document.getElementById(`tab-${id}`);
+      if (tabElement) {
+        tabElement.classList.add('active');
+      }
+      const tab = tabs.find(t => t.id === id);
+      const content = document.getElementById('content');
+      const addressBar = document.getElementById('address-bar');
+      const aiFloat = document.getElementById('ai-float');
+      if (tab.isHome || tab.isNew) {
+        content.innerHTML = tab.isHome ? createHomeHTML() : createNewTabHTML();
+        content.style.display = 'flex';
+        addressBar.style.display = 'none';
+        aiFloat.style.display = 'flex';
+      } else if (tab.isSettings) {
+        content.innerHTML = createSettingsHTML(buildSettingsContent());
+        content.style.display = 'flex';
+        addressBar.style.display = 'none';
+        aiFloat.style.display = 'none';
+      } else if (tab.isAIChat) {
+        content.innerHTML = '';
+        content.innerHTML = createAIChatHTML(tab.aiPrompt);
+        content.style.display = 'flex';
+        addressBar.style.display = 'none';
+        aiFloat.style.display = 'none';
+        if (tab.aiResponse) {
+          document.getElementById('ai-output').textContent = tab.aiResponse;
+        }
+      } else {
+        content.style.display = 'none';
+        addressBar.style.display = 'flex';
+        aiFloat.style.display = 'none';
+      }
+      setTimeout(() => {
+        const inputEl = document.getElementById('command-input');
+        if (inputEl) {
+          inputEl.value = tab.inputValue || '';
+        } else if (document.getElementById('ai-chat-input')) {
+          const aiInput = document.getElementById('ai-chat-input');
+          aiInput.value = tab.aiPrompt || '';
+          aiInput.focus();
+        }
+        window.electronAPI.switchTab(id);
+      }, 0);
+    }
+
+    function closeTab(id) {
+      if (id !== 'home' && tabs.length > 1) {
+        const index = tabs.findIndex(t => t.id === id);
+        tabs.splice(index, 1);
+        const tabEl = document.getElementById(`tab-${id}`);
+        if (tabEl) {
+          tabEl.remove();
+        }
+        updateTabMiniStatus();
+        const nextId = tabs.length > 0 ? tabs[0].id : null;
+        if (nextId) switchTab(nextId);
+      }
+    }
+
+    function reloadTab() {
+      window.electronAPI.reloadTab();
+    }
+
+    async function goBack() {
+      await window.electronAPI.goBack();
+    }
+
+    async function goForward() {
+      await window.electronAPI.goForward();
+    }
+
+    document.getElementById('settings-btn').onclick = () => {
+      if (isInSettingsMode) {
+        isInSettingsMode = false;
+        activeTabId = 'home';
+        switchTab('home');
+      } else {
+        isInSettingsMode = true;
+        activeTabId = null;
+        const content = document.getElementById('content');
+        content.innerHTML = createSettingsHTML(buildSettingsContent());
+        content.style.display = 'flex';
+        const addressBar = document.getElementById('address-bar');
+        addressBar.style.display = 'none';
+        const aiFloat = document.getElementById('ai-float');
+        aiFloat.style.display = 'none';
+        window.electronAPI.switchTab(null);
+      }
+    };
+
+    document.getElementById('add-tab').onclick = async () => {
+      const id = await window.electronAPI.createTab();
+    };
+
+    async function executeCommand() {
+      try {
+        const command = document.getElementById('command-input').value.trim();
+        if (command) {
+          const tab = tabs.find(t => t.id === activeTabId);
+          if (tab && (tab.isHome || tab.isNew)) {
+            const resultEl = document.getElementById('command-result');
+            const response = await window.electronAPI.executeCommand(command, activeTabId);
+            if (response.success) {
+              resultEl.textContent = response.message;
+            } else {
+              resultEl.textContent = `Error: ${response.message}`;
+            }
+            updateInputValue('');
+            document.getElementById('command-input').value = '';
+          }
+        }
+      } catch (error) {
+        document.getElementById('command-result').textContent = `Error: ${error.message}`;
+      }
+    }
+
+    async function sendAIChat() {
+      const input = document.getElementById('ai-chat-input');
+      const message = input.value.trim();
+      if (message) {
+        input.value = '';
+        try {
+          const response = await window.electronAPI.queryAI(message, activeTabId, 'chat');
+          document.getElementById('ai-output').textContent = response;
+          const tab = tabs.find(t => t.id === activeTabId);
+          if (tab) {
+            tab.aiPrompt = message;
+            tab.aiResponse = response;
+          }
+        } catch (error) {
+          document.getElementById('ai-output').textContent = `Error: ${error.message}`;
+        }
+      }
+    }
+
+    async function handleAIChatEnter(event) {
+      if (event.key === 'Enter') {
+        await sendAIChat();
+      }
+    }
+
+    async function handleUrlInput() {
+      const urlInput = document.getElementById('url-display').value.trim();
+      if (urlInput) {
+        await window.electronAPI.navigateToUrl(urlInput);
+      }
+    }
+
+    async function handleInputEnter(event, inputId) {
+      if (event.key === 'Enter') {
+        if (inputId === 'url-display') {
+          await handleUrlInput();
+        } else if (inputId === 'command-input') {
+          await executeCommand();
+        }
+      }
+    }
+
+    function updateInputValue(val) {
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (tab) tab.inputValue = val;
+    }
+
+    async function summarizeSelection(text) {
+      if (text.trim()) {
+        const trimmedText = text.length > 2000 ? text.slice(0, 2000) + '...' : text;
+        console.log('Summarize selected text:', trimmedText.slice(0, 50));
+        try {
+          const response = await window.electronAPI.queryAI(`Please summarize this text: ${trimmedText}`, undefined, 'summarize');
+          console.log('Response:', response.slice(0, 50));
+          addMessage('ai', response);
+          switchTab('home');
+          toggleAIDialog(true);
+        } catch (error) {
+          console.error(error);
+          addMessage('ai', `Error: ${error.message}`);
+          switchTab('home');
+          toggleAIDialog(true);
+        }
+      }
+    }
+
+    async function explainSelection(text) {
+      if (text.trim()) {
+        const trimmedText = text.length > 2000 ? text.slice(0, 2000) + '...' : text;
+        console.log('Explain selected text:', trimmedText.slice(0, 50));
+        try {
+          const response = await window.electronAPI.queryAI(`Tell me more about this text: ${trimmedText}`, undefined, 'explain');
+          console.log('Response:', response.slice(0, 50));
+          addMessage('ai', response);
+          switchTab('home');
+          toggleAIDialog(true);
+        } catch (error) {
+          console.error(error);
+          addMessage('ai', `Error: ${error.message}`);
+          switchTab('home');
+          toggleAIDialog(true);
+        }
+      }
+    }
+
+    async function openAIForPrompt(prompt, action = 'chat') {
+      const dialog = document.getElementById('ai-dialog');
+      dialog.style.display = 'flex';
+      isDialogOpenForContext = true;
+      const chat = dialog.querySelector('.chat');
+      try {
+        const response = await window.electronAPI.queryAI(prompt, undefined, action);
+        addMessage('ai', response);
+      } catch (error) {
+        addMessage('ai', `Error: ${error.message}`);
+      }
+    }
+
+    function toggleAIDialog(show) {
+      const dialog = document.getElementById('ai-dialog');
+      const float = document.getElementById('ai-float');
+      let showBtn = false;
+      if (activeTabId && (!isInSettingsMode && !tabs.find(t => t.id === activeTabId).isAIChat)) {
+        showBtn = true;
+      }
+      if (show !== undefined) {
+        dialog.style.display = show ? 'flex' : 'none';
+        float.style.display = showBtn ? 'flex' : 'none';
+        isDialogOpenForContext = show;
+      } else {
+        const visible = dialog.style.display === 'flex';
+        dialog.style.display = visible ? 'none' : 'flex';
+        float.style.display = showBtn ? 'flex' : 'none';
+        isDialogOpenForContext = !visible;
+      }
+    }
+
+    async function sendAIMessage() {
+      const input = document.getElementById('ai-input');
+      const message = input.value.trim();
+      if (message) {
+        addMessage('user', message);
+        input.value = '';
+        try {
+          const response = await window.electronAPI.queryAI(message, undefined, 'chat');
+          addMessage('ai', response);
+        } catch (error) {
+          addMessage('ai', `Error: ${error.message}`);
+        }
+      }
+    }
+
+    async function handleAIEnter(event) {
+      if (event.key === 'Enter') {
+        await sendAIMessage();
+      }
+    }
+
+    function addMessage(className, text) {
+      const chat = document.getElementById('ai-chat');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${className}`;
+      messageDiv.textContent = text;
+      chat.appendChild(messageDiv);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    window.electronAPI.onAddAndSwitchTab((id, title) => {
+      const newTab = createTab(id, title);
+      const addTabBtn = document.getElementById('add-tab');
+      if (newTab && newTab.tabElement && addTabBtn && addTabBtn.parentNode) {
+        addTabBtn.parentNode.insertBefore(newTab.tabElement, addTabBtn);
+      }
+      switchTab(id);
+    });
+
+    window.electronAPI.onUpdateTabTitle((id, title, faviconUrl) => {
+      const tab = tabs.find(t => t.id === id);
+      if (tab) {
+        const wasNew = tab.isNew;
+        tab.isNew = false;
+        tab.title = title;
+        const tabEl = document.getElementById(`tab-${id}`);
+        if (tabEl) {
+          const span = tabEl.querySelector('span.tab-title');
+          if (span) {
+            const displayTitle = (typeof title === 'string' ? title.slice(0, 25) : 'Sentoogle');
+            span.textContent = displayTitle;
+          }
+          const img = tabEl.querySelector('img.favicon');
+          if (img && faviconUrl) {
+            img.src = faviconUrl;
+          }
+        }
+        if (wasNew && !tab.isNew && id === activeTabId) {
+          switchTab(id);
+        }
+        updateTabMiniStatus();
+      }
+    });
+
+    window.electronAPI.onUpdateAddressBar((url) => {
+      const urlDisplay = document.getElementById('url-display');
+      if (urlDisplay) {
+        urlDisplay.onkeydown = (event) => handleInputEnter(event, 'url-display');
+        urlDisplay.value = (typeof url === 'string' ? url : '') || '';
+      }
+    });
+
+    async function loadSettings() {
+      const loaded = await window.electronAPI.getAISettings();
+      aiSettings = loaded || aiSettings;
+    }
+
+    async function saveSetting(action, model) {
+      await window.electronAPI.saveAISetting({ action, model });
+      aiSettings[action] = model;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadSettings();
+      initializeHome();
+    });
+
+    function initializeHome() {
+      if (!tabs.find(t => t.id === 'home')) {
+        const homeTab = createTab('home', 'Home', 'https://s2.coinmarketcap.com/static/img/coins/64x64/38868.png');
+        const addTabBtn = document.getElementById('add-tab');
+        if (homeTab && homeTab.tabElement && addTabBtn && addTabBtn.parentNode) {
+          addTabBtn.parentNode.insertBefore(homeTab.tabElement, addTabBtn);
+        }
+      }
+      activeTabId = 'home';
+      switchTab('home');
+    }
+    window.electronAPI.onContextMenuSummarize((text) => {
+      summarizeSelection(text);
+    });
+
+    window.electronAPI.onContextMenuExplain((text) => {
+      explainSelection(text);
+    });
+  </script>
+</body>
+</html>
